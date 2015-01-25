@@ -397,18 +397,21 @@ fma_llvm(x::Float64, y::Float64, z::Float64) =
 # Disable LLVM's fma if it is incorrect, e.g. because LLVM falls back
 # onto a broken system libm; if so, use openlibm's fma instead
 # 1.0000305f0 = 1 + 1/2^15
-if fma_llvm(1.0000305f0, 1.0000305f0, -1.0f0) == 6.103609f-5
-    fma(x::Float32, y::Float32, z::Float32) = fma_llvm(x,y,z)
-else
-    fma(x::Float32, y::Float32, z::Float32) = fma_libm(x,y,z)
-end
 # 1.0000000009313226 = 1 + 1/2^30
-if (fma_llvm(1.0000000009313226, 1.0000000009313226, -1.0) ==
-    1.8626451500983188e-9)
+if (fma_llvm(1.0000305f0, 1.0000305f0, -1.0f0) == 6.103609f-5 &&
+    (fma_llvm(1.0000000009313226, 1.0000000009313226, -1.0) ==
+     1.8626451500983188e-9))
+    fma(x::Float32, y::Float32, z::Float32) = fma_llvm(x,y,z)
     fma(x::Float64, y::Float64, z::Float64) = fma_llvm(x,y,z)
 else
+    fma(x::Float32, y::Float32, z::Float32) = fma_libm(x,y,z)
     fma(x::Float64, y::Float64, z::Float64) = fma_libm(x,y,z)
 end
+# This is necessary at least on 32-bit Intel Linux, since fma_llvm may
+# have called glibc, and some broken glibc fma implementations don't
+# properly restore the rounding mode
+Rounding.set_rounding_raw(Float32, Rounding.JL_FE_TONEAREST)
+Rounding.set_rounding_raw(Float64, Rounding.JL_FE_TONEAREST)
 
 ## byte order swaps for arbitrary-endianness serialization/deserialization ##
 bswap(x::Float32) = box(Float32,bswap_int(unbox(Float32,x)))
