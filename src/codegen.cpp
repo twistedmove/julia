@@ -3475,7 +3475,7 @@ static Function *gen_jlcall_wrapper(jl_lambda_info_t *lam, jl_expr_t *ast, Funct
 {
     std::stringstream funcName;
     const std::string &fname = f->getName().str();
-    funcName << "jlcall_";
+    funcName.str("jlapi_");
     if (fname.compare(0, 6, "julia_") == 0)
         funcName << fname.substr(6);
     else
@@ -3690,7 +3690,8 @@ static Function *emit_function(jl_lambda_info_t *lam, bool force_specialized, bo
 
     std::stringstream funcName;
     // try to avoid conflicts in the global symbol table
-    funcName << "julia_" << lam->name->name;
+    funcName.str("julia_");
+    funcName << lam->name->name;
 
     Module *m;
 #ifdef USE_MCJIT
@@ -3757,8 +3758,11 @@ static Function *emit_function(jl_lambda_info_t *lam, bool force_specialized, bo
             if (!err_msg.empty())
                 jl_error(err_msg.c_str());
 
-            Function *cw = Function::Create(FunctionType::get(sret?T_void:prt, fargt_sig, false), Function::ExternalLinkage,
-                                   f->getName(), jl_Module);
+            funcName.str("jlcapi_");
+            funcName << lam->name->name << globalUnique;
+            Function *cw = Function::Create(FunctionType::get(sret ? T_void : prt, fargt_sig, false),
+                    imaging_mode ? GlobalVariable::InternalLinkage : GlobalVariable::ExternalLinkage,
+                    funcName.str(), m);
             cw->setAttributes(attrs);
 
             BasicBlock *b0 = BasicBlock::Create(jl_LLVMContext, "top", cw);
@@ -3794,20 +3798,17 @@ static Function *emit_function(jl_lambda_info_t *lam, bool force_specialized, bo
                 }
                 if (t != fargt[i+sret]) {
                     if (t == jl_pvalue_llvmt) {
-                        //TODO: switch to emit_newobj
                         if (byRefList[i])
                             v = builder.CreateLoad(v,false);
-                        Value *mem = builder.CreateCall(
-                                jlallocobj_func,
-                                ConstantInt::get(T_size,
-                                    sizeof(void*)+((jl_datatype_t*)jlrettype)->size));
-                        builder.CreateStore(
-                                literal_pointer_val((jl_value_t*)jty),
-                                emit_nthptr_addr(mem, (size_t)0));
-                        builder.CreateStore(val,builder.CreateBitCast(
-                            emit_nthptr_addr(mem, (size_t)1),val->getType()->getPointerTo()));
-
-                        val = builder.CreateBitCast(mem,jl_pvalue_llvmt);
+                        Value *mem = emit_newsym(jty, 1, NULL, &ctx);
+                        if (!mem->getType()->isPointerTy()) {
+                           assert(type_is_ghost(t) && mem->getType() == t);
+                        }
+                        else {
+                            builder.CreateStore(val, builder.CreateBitCast(
+                                emit_nthptr_addr(mem, (size_t)1), val->getType()->getPointerTo()));
+                        }
+                        val = builder.CreateBitCast(mem, jl_pvalue_llvmt);
                     }
                     else {
                         assert(0);

@@ -437,6 +437,7 @@ clean: | $(CLEAN_TARGETS)
 	@$(MAKE) -C base clean
 	@$(MAKE) -C src clean
 	@$(MAKE) -C ui clean
+	@$(MAKE) -C test clean
 	@rm -f julia
 	@rm -f *~ *# *.tar.gz
 	@rm -f $(build_bindir)/stringreplace source-dist.tmp source-dist.tmp1
