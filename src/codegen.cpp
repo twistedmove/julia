@@ -3476,7 +3476,7 @@ static Function *gen_jlcall_wrapper(jl_lambda_info_t *lam, jl_expr_t *ast, Funct
 {
     std::stringstream funcName;
     const std::string &fname = f->getName().str();
-    funcName.str("jlapi_");
+    funcName << "jlapi_";
     if (fname.compare(0, 6, "julia_") == 0)
         funcName << fname.substr(6);
     else
@@ -3689,8 +3689,7 @@ static Function *emit_function(jl_lambda_info_t *lam, bool force_specialized, bo
 
     std::stringstream funcName;
     // try to avoid conflicts in the global symbol table
-    funcName.str("julia_");
-    funcName << lam->name->name;
+    funcName << "julia_" << lam->name->name;
 
     Module *m;
 #ifdef USE_MCJIT
@@ -3757,8 +3756,8 @@ static Function *emit_function(jl_lambda_info_t *lam, bool force_specialized, bo
             if (!err_msg.empty())
                 jl_error(err_msg.c_str());
 
-            funcName.str("jlcapi_");
-            funcName << lam->name->name << globalUnique;
+            funcName.str("");
+            funcName << "jlcapi_" << lam->name->name << "_" << globalUnique;
             Function *cw = Function::Create(FunctionType::get(sret ? T_void : prt, fargt_sig, false),
                     imaging_mode ? GlobalVariable::InternalLinkage : GlobalVariable::ExternalLinkage,
                     funcName.str(), m);
