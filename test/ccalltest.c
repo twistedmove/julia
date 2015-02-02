@@ -157,7 +157,9 @@ char* stest(char *x) {
     if (verbose) printf("%s\n", x);
     return x;
 }
-char* sptest(struct { struct { void* type; char* data; } *data; } str ) {
+
+struct jl_asciistring_t { struct { void* type; char* data; } *data; };
+char* sptest(struct jl_asciistring_t str) {
     //Unpack an ASCIIString
     return stest(str.data->data);
 }

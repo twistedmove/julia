@@ -111,6 +111,7 @@ julia-debug julia-release: git-submodules
 	@$(MAKE) $(QUIET_MAKE) -C src lib$@
 	@$(MAKE) $(QUIET_MAKE) -C base
 	@$(MAKE) $(QUIET_MAKE) -C ui $@
+	@$(MAKE) $(QUIET_MAKE) -C test $@
 ifneq ($(OS),WINNT)
 ifndef JULIA_VAGRANT_BUILD
 	@$(MAKE) $(QUIET_MAKE) $@-symlink
@@ -426,6 +427,7 @@ clean: | $(CLEAN_TARGETS)
 	@$(MAKE) -C base clean
 	@$(MAKE) -C src clean
 	@$(MAKE) -C ui clean
+	@$(MAKE) -C test clean
 	@rm -f julia
 	@rm -f *~ *# *.tar.gz
 	@rm -f $(build_bindir)/stringreplace source-dist.tmp source-dist.tmp1

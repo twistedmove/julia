@@ -1,7 +1,7 @@
 JULIAHOME = $(abspath ..)
 include ../Make.inc
 
-TESTS = all linalg $(filter-out TestHelpers runtests testdefs,$(subst .jl,,$(wildcard *.jl)))
+TESTS = all linalg $(filter-out TestHelpers runtests testdefs,$(subst .jl,,$(wildcard *.jl) $(wildcard linalg/*.jl)))
 
 default: all
 
@@ -17,9 +17,9 @@ clean:
 
 .PHONY: $(TESTS) perf clean
 
+all ccall julia-debug julia-release: libccalltest.$(SHLIB_EXT)
 libccalltest.$(SHLIB_EXT): ccalltest.c
-	$(CC) $(CFLAGS) $(DEBUGFLAGS) -O3 $< $(fPIC) -shared -o $@ $(LDFLAGS) -DCC=$(CC)
-all ccall: libccalltest.$(SHLIB_EXT)
+	@$(call PRINT_CC, $(CC) $(CFLAGS) $(DEBUGFLAGS) -O3 $< $(fPIC) -shared -o $@ $(LDFLAGS) -DCC=$(CC))
 
-ccalltest: ccalltest.c
-	$(CC) $(CFLAGS) $(DEBUGFLAGS) -O3 $< -o $@ $(LDFLAGS) -DCC=$(CC)
+ccalltest: ccalltest.c libccalltest.$(SHLIB_EXT)
+	@$(call PRINT_CC, $(CC) $(CFLAGS) $(DEBUGFLAGS) -O3 $< -o $@ $(LDFLAGS) -DCC=$(CC))
