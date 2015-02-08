@@ -15,6 +15,17 @@ typealias StridedVecOrMat{T} Union(StridedVector{T}, StridedMatrix{T})
 
 ## Basic functions ##
 
+# convert Arrays to pointer arrays for ccall
+cconvert_gcroot{P<:Ptr}(::Type{Ptr{P}}, a::Array{P}) = a
+function cconvert_gcroot{P<:Ptr}(::Type{Ptr{P}}, a::Array)
+    ptrs = Array(P, length(a)+1)
+    for i = 1:length(a)
+        ptrs[i] = cconvert(P, a[i])
+    end
+    ptrs[length(a)+1] = C_NULL
+    return ptrs
+end
+
 size(a::Array) = arraysize(a)
 size(a::Array, d) = arraysize(a, d)
 size(a::Matrix) = (arraysize(a,1), arraysize(a,2))

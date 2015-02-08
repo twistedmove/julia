@@ -324,16 +324,18 @@ eltype{T<:CHMVTypes}(A::CholmodTriplet{T}) = T
 ## want as most uses of CholmodDense objects are read-only.
 function CholmodDense!{T<:CHMVTypes}(aa::VecOrMat{T}) # uses the memory from Julia
     m = size(aa,1); n = size(aa,2)
-    CholmodDense(c_CholmodDense{T}(m, n, m*n, stride(aa,2), convert(Ptr{T}, aa),
-                                   C_NULL, xtyp(T), dtyp(T)),
-                 length(size(aa)) == 2 ? aa : reshape(aa, (m,n)))
+    if ndims(aa) != 2
+        aa = reshape(aa, (m,n))
+    end
+    CholmodDense(c_CholmodDense{T}(m, n, m*n, stride(aa,2), pointer(aa),
+                                   C_NULL, xtyp(T), dtyp(T)), aa)
 end
 
 ## The CholmodDense constructor copies the contents
 function CholmodDense{T<:CHMVTypes}(aa::VecOrMat{T})
     m = size(aa,1); n = size(aa,2)
     acp = length(size(aa)) == 2 ? copy(aa) : reshape(copy(aa), (m,n))
-    CholmodDense(c_CholmodDense{T}(m, n, m*n, stride(aa,2), convert(Ptr{T}, acp),
+    CholmodDense(c_CholmodDense{T}(m, n, m*n, stride(aa,2), pointer(acp),
                                    C_NULL, xtyp(T), dtyp(T)), acp)
 end
 
@@ -427,9 +429,9 @@ function CholmodSparse{Tv<:CHMVTypes,Ti<:CHMITypes}(colpt::Vector{Ti},
         throw(ArgumentError("all elements of rowval0 must be in the range [0,$(m-1)]"))
     end
     it = ityp(Ti)
-    cs = CholmodSparse(c_CholmodSparse{Tv,Ti}(m, n, int(nz), convert(Ptr{Ti}, colpt0),
-                                               convert(Ptr{Ti}, rowval0), C_NULL,
-                                               convert(Ptr{Tv}, nzval), C_NULL,
+    cs = CholmodSparse(c_CholmodSparse{Tv,Ti}(m, n, int(nz), pointer(colpt0),
+                                               pointer(rowval0), C_NULL,
+                                               pointer(nzval), C_NULL,
                                                int32(stype), ityp(Ti),
                                                xtyp(Tv), dtyp(Tv),
                                                CHOLMOD_FALSE, CHOLMOD_TRUE),
