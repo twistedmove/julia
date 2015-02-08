@@ -414,7 +414,7 @@ int main() {
     a = 3;
     b = 259;
     fptr = (volatile int (*)(unsigned char x))&testUcharX;
-    if (((size_t)fptr)&((size_t)1) == 1) fptr = NULL;
+    if ((((size_t)fptr)&((size_t)1)) == 1) fptr = NULL;
     printf("compiled with: '%s'\nxs[3] = %d\nxs[259] = %d\ntestUcharX(3) = %d\ntestUcharX(%d) = %d\nfptr(3) = %d\nfptr(259) = %d\n",
            xstr(CC), xs[a], xs[b], testUcharX(a), b, testUcharX((unsigned char)b), fptr(a), fptr(b));
     printf("misc tests:\n");
