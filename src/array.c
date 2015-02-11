@@ -78,7 +78,7 @@ static jl_array_t *_new_array_(jl_value_t *atype, uint32_t ndims, size_t *dims,
         tsz += tot;
         tsz = (tsz+15)&-16; // align whole object 16
         a = (jl_array_t*)allocobj(tsz);
-        a->type = atype;
+        jl_set_typeof(a, atype);
         a->how = 0;
         data = (char*)a + doffs;
         if (tot > 0 && !isunboxed) {
@@ -89,7 +89,7 @@ static jl_array_t *_new_array_(jl_value_t *atype, uint32_t ndims, size_t *dims,
         tsz = (tsz+15)&-16; // align whole object size 16
         a = (jl_array_t*)allocobj(tsz);
         JL_GC_PUSH1(&a);
-        a->type = atype;
+        jl_set_typeof(a, atype);
         // temporarily initialize to make gc-safe
         a->data = NULL;
         a->how = 2;
@@ -150,7 +150,7 @@ jl_array_t *jl_reshape_array(jl_value_t *atype, jl_array_t *data, jl_tuple_t *di
     int ndimwords = jl_array_ndimwords(ndims);
     int tsz = (sizeof(jl_array_t) + sizeof(void*) + ndimwords*sizeof(size_t) + 15)&-16;
     a = (jl_array_t*)allocobj(tsz);
-    a->type = atype;
+    jl_set_typeof(a, atype);
     a->pooled = tsz <= 2048;
     a->ndims = ndims;
     a->offset = 0;
@@ -216,8 +216,8 @@ jl_array_t *jl_ptr_to_array_1d(jl_value_t *atype, void *data, size_t nel,
         elsz = sizeof(void*);
     int tsz = (sizeof(jl_array_t)+jl_array_ndimwords(1)*sizeof(size_t)+15)&-16;
     a = (jl_array_t*)allocobj(tsz);
+    jl_set_typeof(a, atype);
     a->pooled = tsz <= 2048;
-    a->type = atype;
     a->data = data;
 #ifdef STORE_ARRAY_LEN
     a->length = nel;
@@ -267,8 +267,8 @@ jl_array_t *jl_ptr_to_array(jl_value_t *atype, void *data, jl_tuple_t *dims,
     int ndimwords = jl_array_ndimwords(ndims);
     int tsz = (sizeof(jl_array_t) + ndimwords*sizeof(size_t)+15)&-16;
     a = (jl_array_t*)allocobj(tsz);
+    jl_set_typeof(a, atype);
     a->pooled = tsz <= 2048;
-    a->type = atype;
     a->data = data;
 #ifdef STORE_ARRAY_LEN
     a->length = nel;
@@ -340,8 +340,8 @@ jl_value_t *jl_array_to_string(jl_array_t *a)
     // TODO: check type of array?
     jl_datatype_t *string_type = u8_isvalid((char*)a->data, jl_array_len(a)) == 1 ? // ASCII
         jl_ascii_string_type : jl_utf8_string_type;
-    jl_value_t *s = (jl_value_t*)alloc_2w();
-    s->type = (jl_value_t*)string_type;
+    jl_value_t *s = (jl_value_t*)alloc_1w();
+    jl_set_typeof(s, string_type);
     jl_set_nth_field(s, 0, (jl_value_t*)a);
     return s;
 }
