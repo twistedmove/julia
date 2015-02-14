@@ -782,14 +782,14 @@ for f in (:+, :-, :div, :mod, :&, :|, :$)
 end
 for f in (:.+, :.-, :.*, :./, :.\, :.%, :.<<, :.>>, :div, :mod, :rem, :&, :|, :$)
     @eval begin
-        function ($f){T}(A::Number, B::StridedArray{T})
+        function ($f){T}(A::Number, B::AbstractArray{T})
             F = similar(B, promote_array_type(typeof(A),T))
             for i=1:length(B)
                 @inbounds F[i] = ($f)(A, B[i])
             end
             return F
         end
-        function ($f){T}(A::StridedArray{T}, B::Number)
+        function ($f){T}(A::AbstractArray{T}, B::Number)
             F = similar(A, promote_array_type(typeof(B),T))
             for i=1:length(A)
                 @inbounds F[i] = ($f)(A[i], B)
