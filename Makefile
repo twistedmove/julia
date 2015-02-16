@@ -66,6 +66,9 @@ julia-deps: git-submodules |  $(DIRS) $(build_datarootdir)/julia/base $(build_da
 julia-base: julia-deps
 	@$(MAKE) $(QUIET_MAKE) -C base
 
+julia-libccalltest:
+	@$(MAKE) $(QUIET_MAKE) -C test libccalltest
+
 julia-src-%: julia-deps
 	@$(MAKE) $(QUIET_MAKE) -C src libjulia-$*
 
@@ -75,7 +78,7 @@ julia-ui-%: julia-src-%
 julia-sysimg-% : julia-ui-% julia-base
 	@$(MAKE) $(QUIET_MAKE) LD_LIBRARY_PATH=$(build_libdir):$(LD_LIBRARY_PATH) JULIA_EXECUTABLE="$(JULIA_EXECUTABLE_$*)" $(build_private_libdir)/sys.$(SHLIB_EXT)
 
-julia-debug julia-release : julia-% : julia-sysimg-% julia-symlink-%
+julia-debug julia-release : julia-% : julia-sysimg-% julia-symlink-% julia-libccalltest
 
 debug release : % : julia-%
 

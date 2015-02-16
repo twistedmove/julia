@@ -15,9 +15,9 @@ clean:
 	@$(MAKE) -C perf $@
 	-rm -f libccalltest.$(SHLIB_EXT) ccalltest
 
-.PHONY: $(TESTS) perf clean
+.PHONY: $(TESTS) perf clean libccalltest
 
-all ccall julia-debug julia-release: libccalltest.$(SHLIB_EXT)
+all ccall libccalltest: libccalltest.$(SHLIB_EXT)
 libccalltest.$(SHLIB_EXT): ccalltest.c
 	@$(call PRINT_CC, $(CC) $(CFLAGS) $(DEBUGFLAGS) -O3 $< $(fPIC) -shared -o $@ $(LDFLAGS) -DCC=$(CC))
 
