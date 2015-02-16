@@ -67,10 +67,12 @@ end
 copy(a::Struct1) = Struct1(a.x, a.y)
 s1 = Struct1(352.39422f23, 19.287577)
 a = copy(s1)
+if @windows ? (WORD_SIZE == 64) : true
 b = ccall((:test_1, "./libccalltest"), Struct1, (Struct1,), a)
 @test a.x == s1.x && a.y == s1.y
 @test !(a === b)
 @test b.x == s1.x + 1 && b.y == s1.y - 2
+end
 
 function foos1(s::Struct1)
     @test !(s === a)
@@ -93,9 +95,11 @@ bc = ccall((:test_128, "./libccalltest"), Complex{Int64}, (Complex{Int64},), ci6
 @test ci64 == Complex{Int64}(int64(20),int64(51))
 
 i128 = int128(0x7f00123456789abc)<<64 + typemax(UInt64)
+if @windows ? (WORD_SIZE == 64) : true
 b = ccall((:test_128, "./libccalltest"), Int128, (Int128,), i128)
 @test b == i128 + 1
 @test i128 == int128(0x7f00123456789abc)<<64 + typemax(UInt64)
+end
 
 type Struct_Big
     x::Int
@@ -107,11 +111,13 @@ copy(a::Struct_Big) = Struct_Big(a.x, a.y, a.z)
 sbig = Struct_Big(424,-5,int8('Z'))
 
 a = copy(sbig)
+if @windows ? (WORD_SIZE == 64) : true
 b = ccall((:test_big, "./libccalltest"), Struct_Big, (Struct_Big,), a)
 @test a.x == sbig.x && a.y == sbig.y && a.z == sbig.z
 @test b.x == sbig.x + 1
 @test b.y == sbig.y - 2
 @test b.z == sbig.z - int('A')
+end
 
 verbose && flush_cstdio()
 verbose && println("Testing cfunction roundtrip: ")

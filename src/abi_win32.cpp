@@ -30,7 +30,7 @@ void needPassByRef(AbiState *state, jl_value_t *ty, bool *byRef, bool *inReg, bo
     if (!jl_is_datatype(ty) || jl_is_abstracttype(ty) || jl_is_cpointer_type(ty) || jl_is_array_type(ty))
         return;
     size_t size = jl_datatype_size(ty);
-    if (jl_is_bitstype(ty) && size <= 8)
+    if (size <= 8)
         return;
     *byRefAttr = *byRef = true;
 }
