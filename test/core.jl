@@ -2168,3 +2168,19 @@ args8d003 = (:x, :y)
 x8d003 = Any[:y8d003]
 y8d003 = 777
 @test eval(:(string(:(f($($(x8d003...))))))) == "f(777)"
+
+# issue #10221
+module GCbrokentype
+OLD_STDOUT = STDOUT
+file = open(tempname(), "w")
+redirect_stdout(file)
+versioninfo()
+try
+    type Foo{T}
+        val::Bar{T}
+    end
+end
+gc()
+redirect_stdout(OLD_STDOUT)
+close(file)
+end
