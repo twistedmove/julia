@@ -28,14 +28,19 @@ DIRS = $(sort $(build_bindir) $(build_libdir) $(build_private_libdir) $(build_li
 $(foreach dir,$(DIRS),$(eval $(call dir_target,$(dir))))
 $(foreach link,base test,$(eval $(call symlink_target,$(link),$(build_datarootdir)/julia)))
 
+# Build the HTML docs (skipped if already exists, notably in tarballs)
+doc/_build/html:
+	@$(MAKE) -C doc html
+
 # doc needs to live under $(build_docdir), not under $(build_datarootdir)/julia/
 CLEAN_TARGETS += clean-$(build_docdir)
 clean-$(build_docdir):
 	@-rm -fr $(abspath $(build_docdir))
 $(subst $(abspath $(JULIAHOME))/,,$(abspath $(build_docdir))): $(build_docdir)
-$(build_docdir):
+$(build_docdir): doc/_build/html
 	@mkdir -p $@/examples
-	@cp -R doc/devdocs doc/manual doc/stdlib $@
+	@cp -R doc/_build/html $@/
+	@rm $@/html/.buildinfo
 	@cp -R examples/*.jl $@/examples/
 	@cp -R examples/clustermanager $@/examples/
 
@@ -412,16 +417,39 @@ else
 endif
 	rm -fr $(prefix)
 
+# Make tarball with only Julia code
+light-source-dist:
+	# Save git information
+	-@$(MAKE) -C base version_git.jl.phony
+	# Make HTML documentation
+	@$(MAKE) -C doc html
 
+	# Create file light-source-dist.tmp to hold all the filenames that go into the tarball
+	echo "base/version_git.jl" > light-source-dist.tmp
+	git ls-files >> light-source-dist.tmp
+	find doc/_build/html >> light-source-dist.tmp
+
+	# Remove unwanted files
+	sed -e '/\.git/d' -e '/\.travis/d' light-source-dist.tmp > light-source-dist.tmp1
+
+	# Prefix everything with the current directory name (usually "julia"), then create tarball
+	DIRNAME=$$(basename $$(pwd)); \
+	sed -e "s_.*_$$DIRNAME/&_" light-source-dist.tmp1 > light-source-dist.tmp; \
+	cd ../ && tar -cz -T $$DIRNAME/light-source-dist.tmp --no-recursion -f $$DIRNAME/julia-$(JULIA_VERSION)_$(JULIA_COMMIT).tar.gz
+
+# Make tarball with Julia code plus all dependencies
 full-source-dist source-dist: git-submodules
 	# Save git information
 	-@$(MAKE) -C base version_git.jl.phony
 	# Get all the dependencies downloaded
 	@$(MAKE) -C deps getall
+	# Make HTML documentation
+	@$(MAKE) -C doc html
 
 	# Create file full-source-dist.tmp to hold all the filenames that go into the tarball
 	echo "base/version_git.jl" > full-source-dist.tmp
 	git ls-files >> full-source-dist.tmp
+	ls doc/_build/html >> full-source-dist.tmp
 	ls deps/*.tar.gz deps/*.tar.bz2 deps/*.tar.xz deps/*.tgz deps/*.zip >> full-source-dist.tmp
 	git submodule --quiet foreach 'git ls-files | sed "s&^&$$path/&"' >> full-source-dist.tmp
 
@@ -435,6 +463,7 @@ full-source-dist source-dist: git-submodules
 
 clean: | $(CLEAN_TARGETS)
 	@$(MAKE) -C base clean
+	@$(MAKE) -C doc clean
 	@$(MAKE) -C src clean
 	@$(MAKE) -C ui clean
 	@rm -f julia
@@ -462,7 +491,7 @@ distcleanall: cleanall
 	julia-deps julia-ui-* julia-src-* julia-symlink-* julia-base julia-sysimg-* \
 	test testall testall1 test-* clean distcleanall cleanall \
 	run-julia run-julia-debug run-julia-release run \
-	install binary-dist dist full-source-dist source-dist git-submodules
+	install binary-dist light-source-dist dist full-source-dist source-dist git-submodules
 
 test: check-whitespace release
 	@$(MAKE) $(QUIET_MAKE) -C test default
