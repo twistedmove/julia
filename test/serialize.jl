@@ -264,3 +264,17 @@ create_serialization_stream() do s # user-defined type array
     @test r.state == :failed
     @test isa(t.exception, ErrorException)
 end
+
+# cycles
+create_serialization_stream() do s
+    A = Any[1,2,3,4,5]
+    A[3] = A
+    serialize(s, A)
+    seekstart(s)
+    b = deserialize(s)
+    @test b[3] === b
+    @test b[1] == 1
+    @test b[5] == 5
+    @test length(b) == 5
+    @test isa(b,Vector{Any})
+end
